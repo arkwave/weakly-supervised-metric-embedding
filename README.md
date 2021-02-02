@@ -1,1 +1,1 @@
-# weakly-supervised-metric-embedding
+# online-triplet-embedding
