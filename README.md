@@ -17,7 +17,7 @@ For reference, pairwise constraints are tuples of the form (A, B) where data
 points A and B are considered "similar", while triplet constraints are tuples of
 the form (A, B, C) where B is more similar to A than C.
 
-## Rationale
+## Problem Statement
 
 Contrastive methods are a popular way to learn semantically meaningful
 embeddings of high dimensional data. Intuitively, any reasonable embedding
@@ -42,6 +42,13 @@ Overall, we are simultaneously minimizing two losses: the contrastive or triplet
 latent space, and the reconstruction error. These losses are balanced with a weighting parameter M. 
 As M tends to 1, we approach the behavior of a regular siamese/triplet network; as M tends to 0, we approach
 the behavior of a regular autoencoder/VAE. 
+
+## Architecture Visualization
+
+![image](github_disps/model_architecture.png)
+<figcaption>Figure 1: Pairwise Network Architecture. The encoder/decoder components collectively can either be
+regular or variational autoencoders.</figcaption>
+
 
 ## Usage 
 
@@ -73,13 +80,14 @@ Parameters:
 
 ## Results
 
-![image](results/PyTorch_Implementation/Pairwise_VAE/mnist/github_disp2.png)
-
-Figure 1: Results from running the VAE variant with Pairwise Constraints on MNIST with the raw pixels as input. The inter- and intra-class variance are clearly preserved. 
-
-
-![image](results/PyTorch_Implementation/EmbEnc_CIFAR/latent=100/ResNet_features/github_disp3.png)
-
-Figure 2: Results from running the deterministic autoencoder variant with Pairwise constraints on CIFAR10, with features extracted from a pre-trained ResNet50. Each number refers to one of the classes in CIFAR10. Interestingly, all the machine classes are embedded closer together than the animal classes.
+### MNIST
+![image](github_disps/github_disp2.png)
+<figcaption>Figure 2: Results from running the VAE variant with Pairwise Constraints on MNIST 
+with the raw pixels as input. The inter- and intra-class variance are clearly preserved.</figcaption>
 
 
+### CIFAR-10
+![image](github_disps/github_disp3.png)
+<figcaption>Figure 3: Results from running the deterministic autoencoder variant with Pairwise constraints on 
+CIFAR10, with features extracted from a pre-trained ResNet50. Each number refers to one of the classes in 
+CIFAR10. </figcaption>
