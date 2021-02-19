@@ -1,7 +1,11 @@
 import cv2 
 import os 
+import requests
+import urllib
+
 import numpy as np  
 import multiprocessing as mp 
+from bs4 import BeautifulSoup
 from timeit import default_timer as timer
 
 import torch 
@@ -232,3 +236,68 @@ def load_data(dataset_name, composite_labels=None, normalize=True, feature_extra
             return load_cifar(feature_extractor=feature_extractor, normalize=normalize)
     elif dataset_name.lower() == 'mnist':
         return load_mnist(normalize=normalize) 
+
+
+# imagenet downloading helper functions
+def url_to_image(url):
+    # download the image, convert it to a NumPy array, and then read
+    # it into OpenCV format
+    resp = urllib.request.urlopen(url)
+    image = np.asarray(bytearray(resp.read()), dtype="uint8")
+    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+ 
+    # return the image
+    return image
+
+
+def get_url(id_, 
+            general_url="http://image-net.org/api/text/imagenet.synset.geturls?wnid="):
+    page = requests.get(general_url + id_).content
+    soup = BeautifulSoup(page, 'html.parser')
+    return soup
+
+
+def soups_from_ids(ids):
+    soups = {key: "" for key in ids}
+    for id_ in ids:
+        soup = get_url(ids[id_])
+        soups[id_] = soup
+    return soups
+
+
+def download_images(soups):
+    missing = 0
+    for key, soup in soups.items():
+        img_num = 1
+        path = 'datasets/' + key + '/'
+        urls = str(soup).split('\r\n')
+        print('processing %s images' % key)
+        for url in urls:
+            if img_num > 150:
+                break
+            try:
+                img = url_to_image(url)
+                if img is not None:
+                    name = str(key) + '_' + str(img_num) + '.jpg'
+                    cv2.imwrite(path + name, img)
+                    img_num += 1
+            except (urllib.error.HTTPError, urllib.error.URLError, ValueError) as e:
+                missing += 1
+            except TimeoutError as e:
+                continue 
+                missing += 1
+            except:
+                missing += 1
+            
+    print('missing images: ', missing)
+
+def download_imagenet(ids):
+    # ids = {'dog': "n02083346",
+#        'cat': "n02120997",
+#        'snake': "n01726692" ,
+#        'lizard':"n01674464", 
+#        'horses': "n02374451",
+#        'bovine':"n02402010",
+#        'deer': "n02430045"}
+    soups = soups_from_ids(ids)
+    download_images(soups)
