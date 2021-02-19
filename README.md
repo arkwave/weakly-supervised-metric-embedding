@@ -1,5 +1,7 @@
 # Learning weakly-supervised metric embeddings
 
+## Summary
+
 This repository documents some experiments with siamese/triplet autoencoders,
 and siamese _variational_ autoencoders. The goal of these experiements was to
 learn interesting, semantically meaningful low-dimensional representations of
@@ -26,45 +28,58 @@ contrastive methods build on this intuition by:
 2. penalizing small distances (i.e. distances less than some _margin_) between
 points tagged _a-priori_ as dissimilar.
 
+This method is not without its flaws - most notably, blindly moving "similar" points 
+closer together erases the intra-class variance, which might be something we are 
+interested in. 
 
-Suppose we are given two points $x$ and $y$, and a function $f_\theta:
-\mathbb{R}^n \to \mathbb{R}^d$ parameterized by weights $\theta$ and $d << n$.
-Let $z = 1(x = y)$. Our loss between similar vectors is simply the distance
-between them:
+One possible solution to this would be to replace regular Siamese/Triplet Networks with
+Siamese/Triplet _autoencoders_; the reconstruction accuracy constraint should help somewhat
+in preserving the structure of the latent space so that similar classes are not collapsed. One
+could also use Siamese/Triplet _variational_ autoencoders, which have the additional benefit 
+of imposing a Gaussian prior on the shape of the latent space. 
 
-$$ \mathcal{L}_{sim} =  ||f_\theta (x) - f_\theta (y)||^2 $$
+Overall, we are simultaneously minimizing two losses: the contrastive or triplet loss within the
+latent space, and the reconstruction error. These losses are balanced with a weighting parameter M. 
+As M tends to 1, we approach the behavior of a regular siamese/triplet network; as M tends to 0, we approach
+the behavior of a regular autoencoder/VAE. 
+
+## Usage 
+
+Example can be found in `run.py`:
+
+``` 
+all_results = run_experiment("pairwise", "vae", "cifar10", [0.75], [3], 
+                             num_iters=10, batch_size=32, normalize=True,
+                             feature_extractor='hog')
+
+```
+
+Parameters:
+
+1. `constraint_type`: Simulation type. Accepts either "pairwise" or "triplet"
+2. `encoder_type`: Network type. Accepts either "embenc" (regular autoencoder) or "vae"
+3. `dataset`: Dataset name. Accepts "mnist", "cifar10" and "imagenet"
+4. `list_of_weights`: list of mu values for which experiment is to be run.  
+5. `list_of_latent_dims` (list): list of latent dimensions for which experiment is to be run.  
+6. `batch_size`: batch size from which pairs/triples are generated. Defaults to 64.
+7. `keys`: Mapping from numeric labels to string label names. Defaults to None. Used in visualizing.
+8. `composite_labels`: Maps current labels to composite labels, i.e. when multiple classes are to be merged. 
+9. `margin`: Margin to be used for metric loss. Defaults to 1.
+10. `dropout_val`: dropout value for networks. Defaults to 0.2.
+11. `num_iters`: number of iterations. Defaults to 20000.
+12. `normalize`: Whether or not to normalize the data. 
+13. `feature_extractor`: the type of feature extractor to use. Supports `'resnet'` (features extracted from pre-trained ResNet50) and `'hog'` [(histogram of oriented gradients)](https://ieeexplore.ieee.org/document/1467360)
 
 
-$$ \theta = \text{argmin}_{\theta} z \cdot ||f_\theta (x) - f_\theta (y)||^2 +
-(1-z)\cdot max(0, M - ||f_\theta (x) - f_\theta (y)|)$$
+## Results
 
-## Methodology:
+![image](results/PyTorch_Implementation/Pairwise_VAE/mnist/github_disp2.png)
 
-The algorithm perform a slightly different (but related) optimization depending
-on whether pairwise or triplet constraints are used.
-
-### Optimization for Pairwise Constraints:
-Assume that we are using a minibatch of size $K$, with $N$ classes overall. The
-algorithm then does the following:
-
-1. Select $K$ points at random from the dataset in a class-stratified manner
-(i.e. the number of samples per class per minibatch is precisely $\frac{K}{N}$).
-2. Generate all possible pairs from this minibatch of size $K$ - this would be a
-$K \times 2$ vector. Denote the first column $x$, and the second column $y$.
-3. Create a _label vector_ $z$ such that $z_i$ is 1 if $x_i$ and $y_i$ belong to
-the same class, and 0 otherwise.
-4. Let $d(x, y) = ||x - y||_2$. Additionally, let $\mu \in (0, 1)$. Then, our
-loss function is:
-
-$$\mathcal{L}(x_1, x_2) =  \mu \cdot z \odot d(x, y)^2 + (1-\mu) \cdot (1-z)
-\odot \max(0, l - d(x, y)) $$
+Figure 1: Results from running the VAE variant with Pairwise Constraints on MNIST with the raw pixels as input. The inter- and intra-class variance are clearly preserved. 
 
 
+![image](results/PyTorch_Implementation/EmbEnc_CIFAR/latent=100/ResNet_features/github_disp3.png)
 
-
-
-
-
-
+Figure 2: Results from running the deterministic autoencoder variant with Pairwise constraints on CIFAR10, with features extracted from a pre-trained ResNet50. Each number refers to one of the classes in CIFAR10. Interestingly, all the machine classes are embedded closer together than the animal classes.
 
 
