@@ -5,7 +5,7 @@
 # @Last Modified time: 2020-10-21 23:37:16
 
 
-from experiment import run_experiment 
+from src import run_experiment 
 
 all_results = run_experiment("pairwise", "vae", "cifar10", [0.75], [3], 
                              num_iters=10, batch_size=32, normalize=True,
