@@ -6,7 +6,29 @@
 
 
 from src import run_experiment 
+from src.utils import CIFARLoader
+from argparse import ArgumentParser
+ 
 
-all_results = run_experiment("pairwise", "vae", "cifar10", [0.75], [3], 
-                             num_iters=10, batch_size=32, normalize=True,
-                             feature_extractor='hog')
+def select_reader(data_configs):
+    dataset = data_configs.get("dataset")
+    if dataset == 'cifar10':
+        return CIFARLoader(data_configs) 
+    else: 
+        raise NotImplementedError("Dataset not currently supported")
+
+
+def parse_args():
+    parser = ArgumentParser(description='self-supervised experiment details')
+    parser.add_argument('--data_config', required=True, type='str', help="dataset configuration options")
+    parser.add_argument('--model_config', required=True, type='str', help='network configuration options')
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+
+    args = parse_args() 
+
+    reader = select_reader(args.data_config)    
+    all_results = run_experiment(reader, args.model_config)
+
