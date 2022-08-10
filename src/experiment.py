@@ -3,14 +3,15 @@ from sklearn.metrics import confusion_matrix
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np 
-from src.data_fns import load_data
 from src.plot_fns import label_plot, plot_losses, plot_embeddings
 from src.networks import EmbeddingEncoder, PairwiseEmbeddingEncoder, TripletEmbeddingEncoder, VAE, PairwiseVAE, TripletVAE
 from src.utils import PairGenerator, TripletGenerator
 from src.losses import ContrastiveLoss, TripletLoss, PairwiseVAELoss, TripletVAELoss, reconstruction_error
 from src.training import train_network
 import torch 
-import torch.optim as optim 
+import torch.optim as optim
+
+from src.utils import DataReader 
 
 
 def run_knn(trainX, trainY, testX, testY, labels=['dog', 'cat', 'snake', 'lizard'], experiment_name=""):
@@ -180,34 +181,30 @@ def initialize_network(sim_type, network_type, input_dim, latent_dim, dropout_va
     return network
 
 
-def run_experiment(sim_type, network_type, dataset, mus, latent_dims, 
-                   batch_size=64, keys=None, composite_labels=None, 
-                   margin=1, dropout_val=0.2, num_iters=20000,
-                   normalize=True, feature_extractor='hog'):
+# def run_experiment(sim_type, network_type, dataset, mus, latent_dims, 
+#                    batch_size=64, keys=None, composite_labels=None, 
+#                    margin=1, dropout_val=0.2, num_iters=20000,
+#                    normalize=True, feature_extractor='hog'):
+
+def run_experiment(reader: DataReader, model_configs: dict) -> dict:
     """Overarching function that runs an experiment. Calls _experiment for each
     combination of mu and latent dim. 
 
     Args:
-        sim_type (str): Simulation type. Accepts either "pairwise" or "triplet"
-        network_type (str): Network type. Accepts either "embenc" or "vae"
-        dataset (str): Dataset name. Accepts "mnist", "cifar10" and "imagenet"
-        mus (list): list of mu values for which experiment is to be run.  
-        latent_dims (list): list of latent dimensions for which experiment is to be run.  
-        batch_size (int, optional): batch size from which pairs/triples are generated. Defaults to 64.
-        keys (dict, optional): Mapping from numeric labels to string label names. Defaults to None.
-        composite_labels (dict, optional): Maps current labels to composite labels. Defaults to None.
-        margin (int, optional): Margin to be used for metric loss. Defaults to 1.
-        dropout_val (float, optional): dropout value for networks. Defaults to 0.2.
-        num_iters (int, optional): number of iterations. Defaults to 20000.
+        reader: data reader that handles the loading/pre-processing of the dataset specified in data_configs.  
+        model_configs: specifies the configuration for the model to be used. 
+
+    Examples for both can be found in configs/data.json and configs/model.json 
 
     Returns:
         dict: mapping from (mu, latent_dim) to results for _experiment on those params.
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("loading data...", end='')
-    trainX, trainY, testX, testY, trainLabels, testLabels = load_data(dataset, composite_labels=composite_labels, 
-                                                                      normalize=normalize, 
-                                                                      feature_extractor=feature_extractor)
+
+    # select the approprite data
+    trainX, trainY, testX, testY, trainLabels, testLabels = reader.load() 
+
     print("done.")
 
     # instantiate the generator and the networks based on type. 

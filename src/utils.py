@@ -7,9 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import torch
 from torch.autograd import grad 
 
-
-# np.random.seed(2)
-
+# TODO expand to hard, semihard and all triples?
 class TripletGenerator:
 
     """
@@ -181,6 +179,7 @@ class PairGenerator:
         return anchors, pairs, labels
 
 
+# TODO: fix shapeerror 
 def jacobian(input_, output):
     input_dim = input_.size(-1)
     output_dim = output.size(-1)

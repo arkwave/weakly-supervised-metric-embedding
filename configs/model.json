@@ -1,0 +1,21 @@
+{
+    "sim_type": "triplet",
+    "model_type": "vae",
+    "dropout": 0.2,
+    "input_dim": 50,
+    "latent_dim": 20,
+    "optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.0001
+    },
+    "loss_params": {
+        "margin": 1,
+        "mu": 0,
+        "contractive": false 
+    },
+    "training_params":{
+        "num_iters": 20000,
+        "batch_size": 64,
+        "device": "cpu"
+    }
+}
